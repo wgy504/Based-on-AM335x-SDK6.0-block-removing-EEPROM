@@ -1,0 +1,148 @@
+diff -ruEZIBbw source/arch/arm/mach-omap2/board-am335xevm.c dest/arch/arm/mach-omap2/board-am335xevm.c
+--- source/arch/arm/mach-omap2/board-am335xevm.c	2014-08-08 12:12:12.000000000 +0800
++++ dest/arch/arm/mach-omap2/board-am335xevm.c	2014-08-08 12:43:59.000000000 +0800
+@@ -1791,13 +1791,12 @@
+ 			am33xx_d_can_init(0);
+ 		}
+ 		break;
++	case EVM_SK:
+ 	case GEN_PURP_EVM:
+ 	case GEN_PURP_DDR3_EVM:
+-		if (profile == PROFILE_1) {
+-			setup_pin_mux(d_can_gp_pin_mux);
+-			/* Instance One */
+-			am33xx_d_can_init(1);
+-		}
++		setup_pin_mux(d_can_gp_pin_mux);
++		/* Instance One */
++		am33xx_d_can_init(1);
+ 		break;
+ 	default:
+ 		break;
+@@ -2212,6 +2211,7 @@
+ 	{am335x_rtc_init, DEV_ON_BASEBOARD, PROFILE_ALL},
+ 	{mmc1_wl12xx_init,	DEV_ON_BASEBOARD, PROFILE_ALL},
+ 	{mmc0_init,	DEV_ON_BASEBOARD, PROFILE_ALL},
++	{d_can_init,	DEV_ON_BASEBOARD, PROFILE_ALL},
+ 	{rgmii1_init,	DEV_ON_BASEBOARD, PROFILE_ALL},
+ 	{rgmii2_init,	DEV_ON_BASEBOARD, PROFILE_ALL},
+ 	{lcdc_init,     DEV_ON_BASEBOARD, PROFILE_ALL},
+@@ -2473,24 +2473,27 @@
+ 	/* 1st get the MAC address from EEPROM */
+ 	ret = mem_acc->read(mem_acc, (char *)&am335x_mac_addr,
+ 		EEPROM_MAC_ADDRESS_OFFSET, sizeof(am335x_mac_addr));
+-
++/*
+ 	if (ret != sizeof(am335x_mac_addr)) {
+ 		pr_warning("AM335X: EVM Config read fail: %d\n", ret);
+ 		return;
+ 	}
++*/                                 // EEPROM
+ 
+ 	/* Fillup global mac id */
+ 	am33xx_cpsw_macidfillup(&am335x_mac_addr[0][0],
+ 				&am335x_mac_addr[1][0]);
+ 
+ 	/* get board specific data */
++/*                                   //EEPROM
+ 	ret = mem_acc->read(mem_acc, (char *)&config, 0, sizeof(config));
+ 	if (ret != sizeof(config)) {
+ 		pr_err("AM335X EVM config read fail, read %d bytes\n", ret);
+ 		pr_err("This likely means that there either is no/or a failed EEPROM\n");
+ 		goto out;
+ 	}
+-
++*/
++#if 0     					//EEPROM
+ 	if (config.header != AM335X_EEPROM_HEADER) {
+ 		pr_err("AM335X: wrong header 0x%x, expected 0x%x\n",
+ 			config.header, AM335X_EEPROM_HEADER);
+@@ -2507,7 +2510,9 @@
+ 	pr_info("Board name: %s\n", tmp);
+ 	snprintf(tmp, sizeof(config.version) + 1, "%s", config.version);
+ 	pr_info("Board version: %s\n", tmp);
++#endif
+ 
++#if 0                                         //EEPROM
+ 	if (!strncmp("A335BONE", config.name, 8)) {
+ 		daughter_brd_detected = false;
+ 		if(!strncmp("00A1", config.version, 4) ||
+@@ -2519,7 +2524,9 @@
+ 		setup_beagleboneblack();
+ 	} else if (!strncmp("A335X_SK", config.name, 8)) {
+ 		daughter_brd_detected = false;
++#endif 
+ 		setup_starterkit();
++#if 0                                        //EEPROM
+ 	} else {
+ 		/* only 6 characters of options string used for now */
+ 		snprintf(tmp, 7, "%s", config.opt);
+@@ -2532,7 +2539,7 @@
+ 		else
+ 			goto out;
+ 	}
+-
++#endif 
+ 	am335x_opp_update();
+ 
+ 	/*
+diff -ruEZIBbw source/arch/arm/mach-omap2/hsmmc.c dest/arch/arm/mach-omap2/hsmmc.c
+--- source/arch/arm/mach-omap2/hsmmc.c	2014-08-08 12:12:10.000000000 +0800
++++ dest/arch/arm/mach-omap2/hsmmc.c	2014-08-08 12:43:59.000000000 +0800
+@@ -174,7 +174,6 @@
+ static void hsmmc2_select_input_clk_src(struct omap_mmc_platform_data *mmc)
+ {
+ 	u32 reg;
+-
+ 	if (mmc->slots[0].internal_clock) {
+ 		reg = omap_ctrl_readl(control_devconf1_offset);
+ 		reg |= OMAP2_MMCSDIO2ADPCLKISEL;
+@@ -305,8 +304,9 @@
+ 	}
+ 
+ 	if (cpu_is_am33xx())
++	{
+ 		mmc->version = MMC_CTRL_VERSION_2;
+-
++	}
+ 	if (c->name)
+ 		strncpy(hc_name, c->name, HSMMC_NAME_LEN);
+ 	else
+@@ -459,7 +459,9 @@
+ 	}
+ 
+ 	if (!cpu_is_am33xx())
++	{
+ 		omap_hsmmc_mux(mmc_data, (ctrl_nr - 1));
++	}
+ 
+ 	name = "omap_hsmmc";
+ 
+diff -ruEZIBbw source/arch/arm/plat-omap/i2c.c dest/arch/arm/plat-omap/i2c.c
+--- source/arch/arm/plat-omap/i2c.c	2014-08-08 12:12:08.000000000 +0800
++++ dest/arch/arm/plat-omap/i2c.c	2014-08-08 12:43:58.000000000 +0800
+@@ -279,6 +279,5 @@
+ 		i2c_pdata[bus_id - 1].clkrate = clkrate;
+ 
+ 	i2c_pdata[bus_id - 1].clkrate &= ~OMAP_I2C_CMDLINE_SETUP;
+-
+ 	return omap_i2c_add_bus(bus_id);
+ }
+diff -ruEZIBbw source/drivers/misc/eeprom/at24.c dest/drivers/misc/eeprom/at24.c
+--- source/drivers/misc/eeprom/at24.c	2014-08-08 12:11:25.000000000 +0800
++++ dest/drivers/misc/eeprom/at24.c	2014-08-08 12:43:34.000000000 +0800
+@@ -489,6 +489,7 @@
+ 	unsigned i, num_addresses;
+ 	kernel_ulong_t magic;
+ 
++
+ 	if (client->dev.platform_data) {
+ 		chip = *(struct at24_platform_data *)client->dev.platform_data;
+ 	} else {
+Only in dest/scripts/dtc: dtc-lexer.lex.c
+Only in dest/scripts/dtc: dtc-parser.tab.c
+Only in dest/scripts/dtc: dtc-parser.tab.h
+Only in dest/scripts/genksyms: keywords.hash.c
+Only in dest/scripts/genksyms: lex.lex.c
+Only in dest/scripts/genksyms: parse.tab.c
+Only in dest/scripts/genksyms: parse.tab.h

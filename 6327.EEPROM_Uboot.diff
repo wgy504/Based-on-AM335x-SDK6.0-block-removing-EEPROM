@@ -1,0 +1,93 @@
+diff -ruEZIBbw source/board/ti/am335x/board.c dest/board/ti/am335x/board.c
+--- source/board/ti/am335x/board.c	2014-08-08 12:56:45.000000000 +0800
++++ dest/board/ti/am335x/board.c	2014-08-08 13:11:34.000000000 +0800
+@@ -658,6 +658,7 @@
+ 		puts("Could not get board ID.\n");
+ #endif
+ 
++#if 0 							//EEPROM   
+ 	/* Check if baseboard eeprom is available */
+ 	if (i2c_probe(CONFIG_SYS_I2C_EEPROM_ADDR)) {
+ 		puts("Could not probe the EEPROM; something fundamentally "
+@@ -689,24 +690,26 @@
+ 			hang();
+ 		}
+ 	}
++#endif 
+ 
+ 	enable_board_pin_mux(&header);
+-	if (!strncmp("A335X_SK", header.name, HDR_NAME_LEN)) {
++//	if (!strncmp("A335X_SK", header.name, HDR_NAME_LEN)) {    //EEPROM
+ 		/*
+ 		 * EVM SK 1.2A and later use gpio0_7 to enable DDR3.
+ 		 * This is safe enough to do on older revs.
+ 		 */
+ 		gpio_request(GPIO_DDR_VTT_EN, "ddr_vtt_en");
+ 		gpio_direction_output(GPIO_DDR_VTT_EN, 1);
+-	}
++//	}								//EEPROM
+ 
+ #ifdef CONFIG_NOR_BOOT
+ 	am33xx_spl_board_init();
+ #endif
+ 
+-	if (!strncmp("A335X_SK", header.name, HDR_NAME_LEN))
++//	if (!strncmp("A335X_SK", header.name, HDR_NAME_LEN))		//EEPROM
+ 		config_ddr(303, MT41J128MJT125_IOCTRL_VALUE, &ddr3_data,
+ 			   &ddr3_cmd_ctrl_data, &ddr3_emif_reg_data);
++#if 0
+ 	else if  (!strncmp("A335BNLT", header.name, 8))
+ 		config_ddr(400, MT41K256M16HA125E_IOCTRL_VALUE,
+ 			   &ddr3_beagleblack_data,
+@@ -720,6 +723,7 @@
+ 		config_ddr(266, MT47H128M16RT25E_IOCTRL_VALUE, &ddr2_data,
+ 			   &ddr2_cmd_ctrl_data, &ddr2_emif_reg_data);
+ #endif
++#endif
+ }
+ 
+ /*
+diff -ruEZIBbw source/board/ti/am335x/mux.c dest/board/ti/am335x/mux.c
+--- source/board/ti/am335x/mux.c	2014-08-08 12:56:45.000000000 +0800
++++ dest/board/ti/am335x/mux.c	2014-08-08 13:11:34.000000000 +0800
+@@ -309,8 +309,10 @@
+ 	return (1 << (val & PROFILE_MASK));
+ }
+ 
++
+ void enable_board_pin_mux(struct am335x_baseboard_id *header)
+ {
++#if 0   						//EEPROM
+ 	/* Do board-specific muxes. */
+ 	if (!strncmp(header->name, "A335BONE", HDR_NAME_LEN)) {
+ 		/* Beaglebone pinmux */
+@@ -348,11 +350,13 @@
+ 		configure_module_pin_mux(mii1_pin_mux);
+ 		configure_module_pin_mux(mmc0_no_cd_pin_mux);
+ 	} else if (!strncmp(header->name, "A335X_SK", HDR_NAME_LEN)) {
+-		/* Starter Kit EVM */
++#endif 	
++	/* Starter Kit EVM */
+ 		configure_module_pin_mux(i2c1_pin_mux);
+ 		configure_module_pin_mux(gpio0_7_pin_mux);
+ 		configure_module_pin_mux(rgmii1_pin_mux);
+ 		configure_module_pin_mux(mmc0_pin_mux_sk_evm);
++#if 0
+ 	} else if (!strncmp(header->name, "A335BNLT", HDR_NAME_LEN)) {
+ 		/* Beaglebone LT pinmux */
+ 		configure_module_pin_mux(i2c1_pin_mux);
+@@ -363,4 +367,5 @@
+ 		puts("Unknown board, cannot configure pinmux.");
+ 		hang();
+ 	}
++#endif
+ }
+Only in dest/spl: arch
+Only in dest/spl: board
+Only in dest/spl: common
+Only in dest/spl: disk
+Only in dest/spl: drivers
+Only in dest/spl: fs
+Only in dest/spl: lib
+Only in dest/spl: net
+Only in dest/spl: spl
